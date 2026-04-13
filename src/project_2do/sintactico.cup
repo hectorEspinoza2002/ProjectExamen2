@@ -1,0 +1,363 @@
+package project_2do;
+import java_cup.runtime.Symbol;
+
+parser code
+{:
+    public Nodo instrucciones;
+    @Override
+    public void syntax_error(Symbol s){
+        System.out.println("Error en simbolo: "+s.value+", "+s.left+", "+s.right);
+    }
+
+    @Override
+    public void unrecovered_syntax_error(Symbol s){
+        System.out.println("Error en simbolo: "+s.value+", "+s.left+", "+s.right);
+    }
+:}
+
+action code
+{:
+:}
+
+terminal    PARENTESIS_ABIERTO, PARENTESIS_CERRADO, LLAVE_ABIERTO, LLAVE_CERRADO,
+            IF, ELSE, END, WHILE, FOR, DO, SWITCH, DEFAULT, CASE,
+            CONCAT, PUTS, 
+            OR, AND, NOT, IGUAL_IGUAL, IGUAL,
+            MENOR, MAYOR, DISTINTODE, MAYORIGUAL, MENORIGUAL, 
+            MAS, ASTERISCO, DIVISION, MENOS,
+            COMA, PUNTO_COMA, DOS_PUNTO;
+
+terminal String ENTERO, CADENA, ID;
+
+non terminal inicio;
+
+non terminal Nodo instrucciones, instruccion, asignacion, 
+                if, while, puts, for, dowhile, switch, default, case, casos, caso,
+                expresion, expresiones;
+
+precedence left OR;
+precedence left AND;
+precedence left NOT;
+precedence left IGUAL_IGUAL;
+precedence left MAYOR, MENOR;
+precedence left MAS;
+precedence left ASTERISCO;
+precedence right IGUAL;
+
+start with inicio;
+
+inicio ::= instrucciones:insts
+{:
+parser.instrucciones = insts;
+:};
+    
+
+instrucciones ::= instrucciones:insts instruccion:inst
+{:
+Nodo nodo = insts;
+nodo.hijos.add(inst);
+RESULT = nodo;
+:}
+    | instruccion:inst
+{:
+Nodo nodo = new Nodo("Instruccion");
+nodo.hijos.add(inst);
+RESULT = nodo;
+:}
+    ;
+
+instruccion ::= asignacion:inst
+{:
+RESULT = inst;
+:}
+    | if:inst
+{:
+RESULT = inst;
+:}
+    | while:inst
+{:
+RESULT = inst;
+:}
+    | puts:inst
+{:
+RESULT = inst;
+:}
+    | dowhile:inst
+{:
+RESULT = inst;
+:}
+    | for:inst
+{:
+RESULT = inst;
+:}
+    | switch:inst
+{:
+RESULT = inst;
+:}
+| error{:
+Nodo n = new Nodo("Error");
+RESULT = n;
+:}
+    
+    ;
+
+asignacion ::= ID:id IGUAL expresion:expr
+{:
+Nodo nodoId = new Nodo("variable");
+nodoId.hijos.add(new Nodo(id));
+Nodo inst = new Nodo("asignacion");
+inst.hijos.add(nodoId);
+inst.hijos.add(expr);
+RESULT = inst;
+:}
+    ;
+
+if ::= IF expresion:expr instrucciones:insts END
+{:
+Nodo nodo = new Nodo("if");
+nodo.hijos.add(expr);
+nodo.hijos.add(insts);
+RESULT = nodo;
+:}
+    | IF expresion:expr instrucciones:insts ELSE instrucciones:insts2 END
+{:
+Nodo nodo = new Nodo("if");
+nodo.hijos.add(expr);
+nodo.hijos.add(insts);
+nodo.hijos.add(insts2);
+RESULT = nodo;
+:}
+    ;
+
+while ::= WHILE expresion:expr instrucciones:insts END
+{:
+Nodo nodo = new Nodo("while");
+nodo.hijos.add(expr);
+nodo.hijos.add(insts);
+RESULT = nodo;
+:}
+    ;
+
+dowhile ::= DO LLAVE_ABIERTO instrucciones:insts LLAVE_CERRADO WHILE expresion:expr END
+{:
+Nodo nodo = new Nodo("dowhile");
+nodo.hijos.add(insts);
+nodo.hijos.add(expr);
+RESULT = nodo;
+:};
+
+for ::= FOR PARENTESIS_ABIERTO ID:id IGUAL expresion:inicio PUNTO_COMA expresion:condicion PUNTO_COMA ID:id2 IGUAL expresion:incremento PARENTESIS_CERRADO instrucciones:insts END
+{:
+Nodo nodo = new Nodo("for");
+
+Nodo var = new Nodo("variable");
+var.hijos.add(new Nodo(id));
+
+Nodo asignacion = new Nodo("asignacion");
+asignacion.hijos.add(var);
+asignacion.hijos.add(inicio);
+
+Nodo bloqueInicial = new Nodo("Instruccion");
+bloqueInicial.hijos.add(asignacion);
+
+Nodo var2 = new Nodo("variable");
+var2.hijos.add(new Nodo(id2));
+
+Nodo incrementoNodo = new Nodo("asignacion");
+incrementoNodo.hijos.add(var2);
+incrementoNodo.hijos.add(incremento);
+
+Nodo bloqueIncremento = new Nodo("Instruccion");
+bloqueIncremento.hijos.add(incrementoNodo);
+
+nodo.hijos.add(bloqueInicial);    // 0
+nodo.hijos.add(condicion);        // 1
+nodo.hijos.add(bloqueIncremento); // 2
+nodo.hijos.add(insts);            // 3
+
+RESULT = nodo;
+:}
+;
+
+switch ::= SWITCH PARENTESIS_ABIERTO expresion:expr PARENTESIS_CERRADO LLAVE_ABIERTO casos:cs LLAVE_CERRADO END
+{:
+Nodo nodo = new Nodo("switch");
+nodo.hijos.add(expr);
+nodo.hijos.add(cs);
+RESULT = nodo;
+:}
+;
+
+casos ::= casos:lista caso:c
+{:
+Nodo nodo = lista;
+nodo.hijos.add(c);
+RESULT = nodo;
+:}
+    | caso:c
+{:
+Nodo nodo = new Nodo("casos");
+nodo.hijos.add(c);
+RESULT = nodo;
+:}
+;
+
+caso ::= CASE expresion:expr DOS_PUNTO instrucciones:insts END
+{:
+Nodo nodo = new Nodo("case");
+nodo.hijos.add(expr);
+nodo.hijos.add(insts);
+RESULT = nodo;
+:}
+    | CASE expresion:expr DOS_PUNTO instrucciones:insts
+{:
+Nodo nodo = new Nodo("case");
+nodo.hijos.add(expr);
+nodo.hijos.add(insts);
+RESULT = nodo;
+:}
+    | DEFAULT DOS_PUNTO instrucciones:insts END
+{:
+Nodo nodo = new Nodo("default");
+nodo.hijos.add(insts);
+RESULT = nodo;
+:}
+    | DEFAULT DOS_PUNTO instrucciones:insts
+{:
+Nodo nodo = new Nodo("default");
+nodo.hijos.add(insts);
+RESULT = nodo;
+:}
+;
+
+puts ::= PUTS expresion:expr
+{:
+Nodo nodo =  new Nodo("puts");
+nodo.hijos.add(expr);
+RESULT = nodo;
+:}
+    ;
+
+expresion ::= expresion:expr MAS expresion:expr2
+{:
+Nodo nodo = new Nodo("+");
+nodo.hijos.add(expr);
+nodo.hijos.add(expr2);
+RESULT = nodo;
+:}
+    | expresion:expr ASTERISCO expresion:expr2
+{:
+Nodo nodo = new Nodo("*");
+nodo.hijos.add(expr);
+nodo.hijos.add(expr2);
+RESULT = nodo;
+:}
+    | expresion:expr MAYOR expresion:expr2
+{:
+Nodo nodo = new Nodo(">");
+nodo.hijos.add(expr);
+nodo.hijos.add(expr2);
+RESULT = nodo;
+:}
+    | expresion:expr MAYORIGUAL expresion:expr2
+{:
+Nodo nodo = new Nodo(">=");
+nodo.hijos.add(expr);
+nodo.hijos.add(expr2);
+RESULT = nodo;
+:}
+    | expresion:expr MENOR expresion:expr2
+{:
+Nodo nodo = new Nodo("<");
+nodo.hijos.add(expr);
+nodo.hijos.add(expr2);
+RESULT = nodo;
+:}
+    | expresion:expr MENORIGUAL expresion:expr2
+{:
+Nodo nodo = new Nodo("<=");
+nodo.hijos.add(expr);
+nodo.hijos.add(expr2);
+RESULT = nodo;
+:}
+    | expresion:expr DISTINTODE expresion:expr2
+{:
+Nodo nodo = new Nodo("!=");
+nodo.hijos.add(expr);
+nodo.hijos.add(expr2);
+RESULT = nodo;
+:}
+    | expresion:expr IGUAL_IGUAL expresion:expr2
+{:
+Nodo nodo = new Nodo("==");
+nodo.hijos.add(expr);
+nodo.hijos.add(expr2);
+RESULT = nodo;
+:}
+    | NOT expresion:expr
+{:
+Nodo nodo = new Nodo("not");
+nodo.hijos.add(expr);
+RESULT = nodo;
+:}
+    | expresion:expr OR expresion:expr2
+{:
+Nodo nodo = new Nodo("or");
+nodo.hijos.add(expr);
+nodo.hijos.add(expr2);
+RESULT = nodo;
+:}
+    | expresion:expr AND expresion:expr2
+{:
+Nodo nodo = new Nodo("and");
+nodo.hijos.add(expr);
+nodo.hijos.add(expr2);
+RESULT = nodo;
+:}
+    | PARENTESIS_ABIERTO expresion:expr PARENTESIS_CERRADO
+{:
+RESULT = expr;
+:}
+    | CONCAT PARENTESIS_ABIERTO expresiones:exprs PARENTESIS_CERRADO
+{:
+Nodo nodo = new Nodo("concatenar");
+nodo.hijos.add(exprs);
+RESULT = nodo;
+:}
+    | ID:id
+{:
+Nodo nodo = new Nodo("variable");
+nodo.hijos.add(new Nodo(id));
+RESULT = nodo;
+:}
+    | ENTERO:entero
+{:
+Nodo nodo = new Nodo("valor");
+Nodo tipo = new Nodo("entero");
+nodo.hijos.add(tipo);
+tipo.hijos.add(new Nodo(entero));
+RESULT = nodo;
+:}
+    | CADENA:cadena
+{:
+Nodo nodo = new Nodo("valor");
+Nodo tipo = new Nodo("cadena");
+nodo.hijos.add(tipo);
+tipo.hijos.add(new Nodo(cadena));
+RESULT = nodo;
+:}
+    ;
+
+expresiones ::= expresiones:exprs COMA expresion:expr
+{:
+Nodo nodo = exprs;
+nodo.hijos.add(expr);
+RESULT = nodo;
+:}
+    | expresion:expr
+{:
+Nodo nodo = new Nodo("Expresion");
+nodo.hijos.add(expr);
+RESULT = nodo;
+:}
+    ;
