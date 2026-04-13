@@ -38,9 +38,9 @@ non terminal Nodo instrucciones, instruccion, asignacion,
 precedence left OR;
 precedence left AND;
 precedence left NOT;
-precedence left IGUAL_IGUAL;
-precedence left MAYOR, MENOR;
-precedence left MAS;
+precedence left IGUAL_IGUAL, DISTINTODE;
+precedence left MAYOR, MENOR, MAYORIGUAL, MENORIGUAL;
+precedence left MAS, MENOS;
 precedence left ASTERISCO;
 precedence right IGUAL;
 
