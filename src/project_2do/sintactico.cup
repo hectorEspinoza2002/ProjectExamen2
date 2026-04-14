@@ -24,7 +24,7 @@ terminal    PARENTESIS_ABIERTO, PARENTESIS_CERRADO, LLAVE_ABIERTO, LLAVE_CERRADO
             CONCAT, PUTS, 
             OR, AND, NOT, IGUAL_IGUAL, IGUAL,
             MENOR, MAYOR, DISTINTODE, MAYORIGUAL, MENORIGUAL, 
-            MAS, ASTERISCO, DIVISION, MENOS,
+            MAS, ASTERISCO, DIVISION, MENOS, PROCENTAJE,
             COMA, PUNTO_COMA, DOS_PUNTO;
 
 terminal String ENTERO, CADENA, ID;
@@ -41,7 +41,7 @@ precedence left NOT;
 precedence left IGUAL_IGUAL, DISTINTODE;
 precedence left MAYOR, MENOR, MAYORIGUAL, MENORIGUAL;
 precedence left MAS, MENOS;
-precedence left ASTERISCO;
+precedence left ASTERISCO, PORCENTAJE;
 precedence right IGUAL;
 
 start with inicio;
@@ -248,6 +248,13 @@ RESULT = nodo;
     | expresion:expr ASTERISCO expresion:expr2
 {:
 Nodo nodo = new Nodo("*");
+nodo.hijos.add(expr);
+nodo.hijos.add(expr2);
+RESULT = nodo;
+:}
+    | expresion:expr PORCENTAJE expresion:expr2
+{:
+Nodo nodo = new Nodo("%");
 nodo.hijos.add(expr);
 nodo.hijos.add(expr2);
 RESULT = nodo;
